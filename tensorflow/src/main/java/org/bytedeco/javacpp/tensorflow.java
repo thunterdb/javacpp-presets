@@ -1366,6 +1366,13 @@ limitations under the License.
   public native @Cast("google::protobuf::int32") int inter_op_parallelism_threads();
   public native void set_inter_op_parallelism_threads(@Cast("google::protobuf::int32") int value);
 
+  // optional bool use_per_session_threads = 9;
+  public native void clear_use_per_session_threads();
+  @MemberGetter public static native int kUsePerSessionThreadsFieldNumber();
+  public static final int kUsePerSessionThreadsFieldNumber = kUsePerSessionThreadsFieldNumber();
+  public native @Cast("bool") boolean use_per_session_threads();
+  public native void set_use_per_session_threads(@Cast("bool") boolean value);
+
   // optional int32 placement_period = 3;
   public native void clear_placement_period();
   @MemberGetter public static native int kPlacementPeriodFieldNumber();
@@ -1453,6 +1460,11 @@ limitations under the License.
 
 
 // optional int32 inter_op_parallelism_threads = 5;
+
+
+
+
+// optional bool use_per_session_threads = 9;
 
 
 
@@ -2819,11 +2831,13 @@ limitations under the License.
 
 // #include "third_party/eigen3/unsupported/Eigen/CXX11/Tensor"
 // #include "tensorflow/core/framework/tensor_shape.pb.h"
+// #include "tensorflow/core/lib/core/errors.h"
 // #include "tensorflow/core/lib/core/stringpiece.h"
 // #include "tensorflow/core/lib/gtl/array_slice.h"
 // #include "tensorflow/core/lib/gtl/inlined_vector.h"
 // #include "tensorflow/core/lib/strings/strcat.h"
-// #include "tensorflow/core/platform/logging.h"  // Declared below
+// #include "tensorflow/core/platform/logging.h"
+// #include "tensorflow/core/public/status.h"  // Declared below
 
 /** Manages the dimensions of a Tensor and their sizes. */
 @Namespace("tensorflow") @NoOffset public static class TensorShape extends Pointer {
@@ -2857,6 +2871,10 @@ limitations under the License.
 
   /** Returns {@code true} iff {@code proto} is a valid tensor shape. */
   public static native @Cast("bool") boolean IsValid(@Const @ByRef TensorShapeProto proto);
+
+  /** Returns {@code OK} iff {@code proto} is a valid tensor shape, and a descriptive error
+   *  status otherwise. */
+  public static native @ByVal Status IsValidShape(@Const @ByRef TensorShapeProto proto);
 
   /** Clear a tensor shape */
   public native void Clear();
@@ -2921,8 +2939,13 @@ limitations under the License.
 
   /** For error messages. */
   public native @StdString BytePointer DebugString();
-  // TODO(vrv): Remove this, this is the same as DebugString().
   public native @StdString BytePointer ShortDebugString();
+  // TODO(vrv): Consolidate DebugString() and ShortDebugString() into one
+  // function that is not verbose and works for scalars.
+
+  /** Same as {@code TensorShape(proto).ShortDebugString()} but doesn't crash for
+   *  invalid protos. */
+  public static native @StdString BytePointer ShortDebugString(@Const @ByRef TensorShapeProto proto);
 }
 
 @Namespace("tensorflow") @NoOffset public static class TensorShapeDim extends Pointer {
@@ -5183,6 +5206,13 @@ limitations under the License.
   public native NodeDef mutable_node(int index);
   public native NodeDef add_node();
 
+  // optional int32 version = 3;
+  public native void clear_version();
+  @MemberGetter public static native int kVersionFieldNumber();
+  public static final int kVersionFieldNumber = kVersionFieldNumber();
+  public native @Cast("google::protobuf::int32") int version();
+  public native void set_version(@Cast("google::protobuf::int32") int value);
+
   // optional .tensorflow.FunctionDefLibrary library = 2;
   public native @Cast("bool") boolean has_library();
   public native void clear_library();
@@ -5323,6 +5353,11 @@ limitations under the License.
 
 
 
+
+
+
+
+// optional int32 version = 3;
 
 
 
@@ -5734,7 +5769,7 @@ public static native @Cast("const char*") BytePointer TF_Message(@Const TF_Statu
 //
 // The data will be deallocated by a subsequent call to TF_DeleteTensor via:
 //      (*deallocator_fn)(data, len, deallocator_arg)
-// Clients can provide a custom deallocator function so they can pass in
+// Clients must provide a custom deallocator function so they can pass in
 // memory managed by something like numpy.
 public static class Deallocator_Pointer_long_Pointer extends FunctionPointer {
     static { Loader.load(); }
@@ -6187,17 +6222,26 @@ limitations under the License.
 //
 // Note: .Doc() should be last.
 // For details, see the OpDefBuilder class in op_def_builder.h.
-// To call OpRegistry::Global()->Register(...), used by the
-// REGISTER_OP macro below.
-@Namespace("tensorflow::register_op") public static native @ByRef OpDefBuilder RegisterOp(@StringPiece BytePointer name);
-@Namespace("tensorflow::register_op") public static native @ByRef OpDefBuilder RegisterOp(@StringPiece String name);
+@Namespace("tensorflow::register_op") public static class OpDefBuilderReceiver extends Pointer {
+    static { Loader.load(); }
+    /** Pointer cast constructor. Invokes {@link Pointer#Pointer(Pointer)}. */
+    public OpDefBuilderReceiver(Pointer p) { super(p); }
+
+  // To call OpRegistry::Global()->Register(...), used by the
+  // REGISTER_OP macro below.
+  // Note: This is an implicitly converting constructor.
+  public OpDefBuilderReceiver(
+        @Const @ByRef OpDefBuilder builder) { super((Pointer)null); allocate(builder); }
+  private native void allocate(
+        @Const @ByRef OpDefBuilder builder);  // NOLINT(runtime/explicit)
+}
   // namespace register_op
 
 // #define REGISTER_OP(name) REGISTER_OP_UNIQ_HELPER(__COUNTER__, name)
 // #define REGISTER_OP_UNIQ_HELPER(ctr, name) REGISTER_OP_UNIQ(ctr, name)
 // #define REGISTER_OP_UNIQ(ctr, name)
-//   static ::tensorflow::OpDefBuilder& register_op##ctr TF_ATTRIBUTE_UNUSED =
-//       ::tensorflow::register_op::RegisterOp(name)
+//   static ::tensorflow::register_op::OpDefBuilderReceiver register_op##ctr
+//       TF_ATTRIBUTE_UNUSED = ::tensorflow::OpDefBuilder(name)
 
   // namespace tensorflow
 
@@ -6692,6 +6736,21 @@ limitations under the License.
   public native @Cast("bool") boolean IsSink();
   // Anything other than the special Source & Sink nodes.
   public native @Cast("bool") boolean IsOp();
+
+  // Node class helpers
+  public native @Cast("bool") boolean IsSwitch();
+  public native @Cast("bool") boolean IsMerge();
+  public native @Cast("bool") boolean IsEnter();
+  public native @Cast("bool") boolean IsExit();
+  public native @Cast("bool") boolean IsNextIteration();
+  public native @Cast("bool") boolean IsLoopCond();
+  public native @Cast("bool") boolean IsControlTrigger();
+  public native @Cast("bool") boolean IsSend();
+  public native @Cast("bool") boolean IsRecv();
+  public native @Cast("bool") boolean IsConstant();
+  public native @Cast("bool") boolean IsVariable();
+  public native @Cast("bool") boolean IsIdentity();
+  public native @Cast("bool") boolean IsControlFlow();
 }
 
 @Namespace("tensorflow") @NoOffset public static class Edge extends Pointer {
@@ -6728,11 +6787,17 @@ limitations under the License.
   // single SINK (always id kSinkId) node, and an edge from SOURCE->SINK.
   //
   // The graph can hold ops found in registry.
+  //
+  // The version defaults to TF_GRAPH_DEF_VERSION.
   public Graph(@Const OpRegistryInterface registry) { super((Pointer)null); allocate(registry); }
   private native void allocate(@Const OpRegistryInterface registry);
 
   @MemberGetter public static native int kControlSlot();
   public static final int kControlSlot = kControlSlot();
+
+  // The GraphDef version of this graph (see graph.proto).
+  public native int version();
+  public native void set_version(int version);
 
   // Adds a new node to this graph, and returns it. Infers the Op and
   // input/output types for the node. *this owns the returned instance.
@@ -6810,30 +6875,20 @@ limitations under the License.
 // Helper routines
 
 @Namespace("tensorflow") public static native @Cast("bool") boolean IsSwitch(@Const Node node);
-
 @Namespace("tensorflow") public static native @Cast("bool") boolean IsMerge(@Const Node node);
-
 @Namespace("tensorflow") public static native @Cast("bool") boolean IsEnter(@Const Node node);
-
 @Namespace("tensorflow") public static native @Cast("bool") boolean IsExit(@Const Node node);
-
-@Namespace("tensorflow") public static native @Cast("bool") boolean IsNextIteration(@Const Node node);
-
+@Namespace("tensorflow") public static native @Cast("bool") boolean IsNextIteration(@Const Node n);
 @Namespace("tensorflow") public static native @Cast("bool") boolean IsLoopCond(@Const Node node);
-
-@Namespace("tensorflow") public static native @Cast("bool") boolean IsControlTrigger(@Const Node node);
-
+@Namespace("tensorflow") public static native @Cast("bool") boolean IsControlTrigger(@Const Node n);
 @Namespace("tensorflow") public static native @Cast("bool") boolean IsSend(@Const Node node);
-
 @Namespace("tensorflow") public static native @Cast("bool") boolean IsRecv(@Const Node node);
 
 // True for Nodes that mediate the transfer of values between processes.
 @Namespace("tensorflow") public static native @Cast("bool") boolean IsTransferNode(@Const Node n);
 
 @Namespace("tensorflow") public static native @Cast("bool") boolean IsConstant(@Const Node node);
-
 @Namespace("tensorflow") public static native @Cast("bool") boolean IsVariable(@Const Node node);
-
 @Namespace("tensorflow") public static native @Cast("bool") boolean IsIdentity(@Const Node node);
 
 // Returns true iff 'n' is a control flow node.
@@ -11659,39 +11714,6 @@ limitations under the License.
 @Namespace("tensorflow::ops") public static native Node Conv2DBackpropInput(Node input_sizes, Node filter, Node out_backprop, @ArraySlice int[] strides,
                           @StringPiece String padding, @Const @ByRef GraphDefBuilder.Options opts);
 
-// Computes exponential linear: `exp(features) - 1` if < 0, `features` otherwise.
-//
-// See [Fast and Accurate Deep Network Learning by Exponential Linear Units (ELUs)
-// ](http://arxiv.org/abs/1511.07289)
-//
-// Arguments:
-// * opts:
-//   .WithName(StringPiece): Set the Node's name
-//   .WithDevice(StringPiece): Set the Node's requested device
-//   .WithControlInput(Node*) / .WithControlInputs({Node*, ...}):
-//     Add control depencies on the specified Node(s).
-//
-// Returns a pointer to the created Node.
-@Namespace("tensorflow::ops") public static native Node Elu(@ByVal NodeBuilder.NodeOut features, @Const @ByRef GraphDefBuilder.Options opts);
-@Namespace("tensorflow::ops") public static native Node Elu(Node features, @Const @ByRef GraphDefBuilder.Options opts);
-
-// Computes gradients for the exponential linear (Elu) operation.
-//
-// Arguments:
-// * gradients: The backpropagated gradients to the corresponding Elu operation.
-// * outputs: The outputs of the corresponding Elu operation.
-// * opts:
-//   .WithName(StringPiece): Set the Node's name
-//   .WithDevice(StringPiece): Set the Node's requested device
-//   .WithControlInput(Node*) / .WithControlInputs({Node*, ...}):
-//     Add control depencies on the specified Node(s).
-//
-// Returns a pointer to the created Node, with output:
-// The gradients: `gradients * (outputs + 1)` if outputs < 0,
-// `gradients` otherwise.
-@Namespace("tensorflow::ops") public static native Node EluGrad(@ByVal NodeBuilder.NodeOut gradients, @ByVal NodeBuilder.NodeOut outputs, @Const @ByRef GraphDefBuilder.Options opts);
-@Namespace("tensorflow::ops") public static native Node EluGrad(Node gradients, Node outputs, @Const @ByRef GraphDefBuilder.Options opts);
-
 // Says whether the targets are in the top `K` predictions.
 //
 // This outputs a `batch_size` bool array, an entry `out[i]` is `true` if the
@@ -12367,37 +12389,6 @@ limitations under the License.
 // A tensor of the specified shape filled with uniform random values.
 @Namespace("tensorflow::ops") public static native Node RandomUniform(@ByVal NodeBuilder.NodeOut shape, @Cast("tensorflow::DataType") int dtype, @Const @ByRef GraphDefBuilder.Options opts);
 @Namespace("tensorflow::ops") public static native Node RandomUniform(Node shape, @Cast("tensorflow::DataType") int dtype, @Const @ByRef GraphDefBuilder.Options opts);
-
-// Outputs random integers from a uniform distribution.
-//
-// The generated values are uniform integers in the range `[minval, maxval)`.
-// The lower bound `minval` is included in the range, while the upper bound
-// `maxval` is excluded.
-//
-// The random integers are slightly biased unless `maxval - minval` is an exact
-// power of two.  The bias is small for values of `maxval - minval` significantly
-// smaller than the range of the output (either `2^32` or `2^64`).
-//
-// Arguments:
-// * shape: The shape of the output tensor.
-// * minval: 0-D.  Inclusive lower bound on the generated integers.
-// * maxval: 0-D.  Exclusive upper bound on the generated integers.
-// * opts:
-//   .WithAttr("seed", int64): Defaults to 0.
-//     If either `seed` or `seed2` are set to be non-zero, the random number
-// generator is seeded by the given seed.  Otherwise, it is seeded by a
-// random seed.
-//   .WithAttr("seed2", int64): Defaults to 0.
-//     A second seed to avoid seed collision.
-//   .WithName(StringPiece): Set the Node's name
-//   .WithDevice(StringPiece): Set the Node's requested device
-//   .WithControlInput(Node*) / .WithControlInputs({Node*, ...}):
-//     Add control depencies on the specified Node(s).
-//
-// Returns a pointer to the created Node, with output:
-// A tensor of the specified shape filled with uniform random integers.
-@Namespace("tensorflow::ops") public static native Node RandomUniformInt(@ByVal NodeBuilder.NodeOut shape, @ByVal NodeBuilder.NodeOut minval, @ByVal NodeBuilder.NodeOut maxval, @Const @ByRef GraphDefBuilder.Options opts);
-@Namespace("tensorflow::ops") public static native Node RandomUniformInt(Node shape, Node minval, Node maxval, @Const @ByRef GraphDefBuilder.Options opts);
 
 // Outputs random values from a truncated normal distribution.
 //

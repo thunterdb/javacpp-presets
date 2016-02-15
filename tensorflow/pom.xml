@@ -10,13 +10,13 @@
   </parent>
 
   <groupId>org.bytedeco.javacpp-presets</groupId>
-  <artifactId>tensorflow</artifactId>
-  <version>${tensorflow.version}-${project.parent.version}</version>
+  <artifactId>tensorflow-${tensorflow.version}</artifactId>
+  <version>${project.parent.version}</version>
   <packaging>jar</packaging>
   <name>JavaCPP Presets for TensorFlow</name>
 
   <properties>
-    <tensorflow.version>master</tensorflow.version>
+    <tensorflow.version>spark-tf</tensorflow.version>
   </properties>
 
   <dependencies>
@@ -41,6 +41,7 @@
           <includePaths>
             <includePath>${basedir}/cppbuild/${platform}/tensorflow-${tensorflow.version}/</includePath>
             <includePath>${basedir}/cppbuild/${platform}/tensorflow-${tensorflow.version}/bazel-genfiles/</includePath>
+            <includePath>${basedir}/cppbuild/${platform}/tensorflow-${tensorflow.version}/bazel-genfiles-copy/</includePath>
             <includePath>${basedir}/cppbuild/${platform}/tensorflow-${tensorflow.version}/google/protobuf/src/</includePath>
             <includePath>${basedir}/cppbuild/${platform}/tensorflow-${tensorflow.version}/third_party/eigen3/</includePath>
           </includePaths>

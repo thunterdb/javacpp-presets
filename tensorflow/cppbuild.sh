@@ -42,7 +42,7 @@ rmdir protobuf || true
 ln -snf ../../protobuf-$PROTOBUF_VERSION protobuf
 cd ..
 patch -Np1 < ../../../tensorflow-$TENSORFLOW_VERSION.patch
-./configure
-bazel build -c opt //tensorflow/cc:libtensorflow.so $BUILDFLAGS
+#./configure
+#bazel build -c opt //tensorflow/cc:libtensorflow.so $BUILDFLAGS
 
 cd ../..
