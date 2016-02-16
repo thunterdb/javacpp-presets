@@ -2448,7 +2448,7 @@ limitations under the License.
 
   // Returns true if this allocator tracks the sizes of allocations.
   // RequestedSize and AllocatedSize must be overridden if
-  // TracksAlloctionSizes is overridden to return true.
+  // TracksAllocationSizes is overridden to return true.
   public native @Cast("bool") boolean TracksAllocationSizes();
 
   // Returns true if this allocator requires tensors with 0 elements
@@ -2551,7 +2551,7 @@ limitations under the License.
 
   public native void Merge(@ByVal AllocatorAttributes other);
 
-  public native @Cast("tensorflow::uint32") int value(); public native AllocatorAttributes value(int value);
+  public native @Cast("tensorflow::uint8") byte value(); public native AllocatorAttributes value(byte value);
 }
 
 // Returns a trivial implementation of Allocator which uses the system
@@ -3439,6 +3439,7 @@ limitations under the License.
 
 // #include "third_party/eigen3/unsupported/Eigen/CXX11/Tensor"
 // #include "tensorflow/core/framework/tensor_shape.pb.h"
+// #include "tensorflow/core/framework/types.pb.h"
 // #include "tensorflow/core/lib/core/errors.h"
 // #include "tensorflow/core/lib/core/status.h"
 // #include "tensorflow/core/lib/core/stringpiece.h"
@@ -3447,7 +3448,6 @@ limitations under the License.
 // #include "tensorflow/core/lib/strings/strcat.h"
 // #include "tensorflow/core/platform/logging.h"  // Declared below
 
-/** Manages the dimensions of a Tensor and their sizes. */
 @Namespace("tensorflow") @NoOffset public static class TensorShape extends Pointer {
     static { Loader.load(); }
     /** Pointer cast constructor. Invokes {@link Pointer#Pointer(Pointer)}. */
@@ -3476,6 +3476,11 @@ limitations under the License.
    *  then call {@code AddDim()} on. */
   public TensorShape() { super((Pointer)null); allocate(); }
   private native void allocate();
+
+  /** Copy the specified shape */
+  public TensorShape(@Const @ByRef TensorShape b) { super((Pointer)null); allocate(b); }
+  private native void allocate(@Const @ByRef TensorShape b);
+  public native @Name("operator =") void put(@Const @ByRef TensorShape b);
 
   /** Returns {@code true} iff {@code proto} is a valid tensor shape. */
   public static native @Cast("bool") boolean IsValid(@Const @ByRef TensorShapeProto proto);
@@ -3518,9 +3523,6 @@ limitations under the License.
   public native @Cast("tensorflow::int64") long dim_size(int d);
 
   /** Returns sizes of all dimensions. */
-  
-  ///
-  public native @Cast("tensorflow::int64*") @ArraySlice LongPointer dim_sizes();
 
   /** \brief Returns the number of elements in the tensor.
    * 
@@ -3551,6 +3553,8 @@ limitations under the License.
   /** Same as {@code TensorShape(proto).DebugString()} but doesn't crash for
    *  invalid protos. */
   public static native @StdString BytePointer DebugString(@Const @ByRef TensorShapeProto proto);
+
+  public native void DumpRep();
 }
 
 @Namespace("tensorflow") @NoOffset public static class TensorShapeDim extends Pointer {
@@ -3613,6 +3617,16 @@ limitations under the License.
 // ----------------------------------------------------------------------------
 // Template method implementation details below
 // ----------------------------------------------------------------------------
+
+
+
+
+
+// ----------------------------------------------------------------------------
+// Inlining of some performance critical routines
+// ----------------------------------------------------------------------------
+
+
 
 
 
@@ -7473,7 +7487,7 @@ limitations under the License.
 
 // A Graph describes a set of computations that are to be
 // performed, as well as the dependencies between those
-// compuations. The basic model is a DAG (directed acyclic graph) with
+// computations. The basic model is a DAG (directed acyclic graph) with
 // * internal nodes representing computational operations to be performed;
 // * edges represent dependencies, indicating the target may only be
 //   executed once the source has completed; and
@@ -7992,7 +8006,7 @@ limitations under the License.
 //     node_builder.Input(input);
 //     return opts.FinalizeBuilder(&node_builder);
 //   }
-//   }  // namspace ops
+//   }  // namespace ops
 //
 //   // Or, alternatively:
 //   namespace ops {
@@ -8000,7 +8014,7 @@ limitations under the License.
 //     static const string kOpName = "Identity";
 //     return UnaryOp(kOpName, input, opts);
 //   }
-//   }  // namspace ops
+//   }  // namespace ops
 //
 // You call it like:
 //   GraphDefBuilder b;
@@ -8170,6 +8184,105 @@ limitations under the License.
   // namespace tensorflow
 
 // #endif  // TENSORFLOW_GRAPH_DEFAULT_DEVICE_H_
+
+
+// Parsed from tensorflow/core/graph/graph_constructor.h
+
+/* Copyright 2015 Google Inc. All Rights Reserved.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+==============================================================================*/
+
+// #ifndef TENSORFLOW_GRAPH_GRAPH_CONSTRUCTOR_H_
+// #define TENSORFLOW_GRAPH_GRAPH_CONSTRUCTOR_H_
+
+// #include "tensorflow/core/framework/config.pb.h"
+// #include "tensorflow/core/framework/graph.pb.h"
+// #include "tensorflow/core/graph/graph.h"
+// #include "tensorflow/core/lib/core/status.h"
+
+// Options specific to constant folding optimizations.
+@Namespace("tensorflow") public static class ConstantFoldingOptions extends Pointer {
+    static { Loader.load(); }
+    /** Default native constructor. */
+    public ConstantFoldingOptions() { super((Pointer)null); allocate(); }
+    /** Native array allocator. Access with {@link Pointer#position(int)}. */
+    public ConstantFoldingOptions(int size) { super((Pointer)null); allocateArray(size); }
+    /** Pointer cast constructor. Invokes {@link Pointer#Pointer(Pointer)}. */
+    public ConstantFoldingOptions(Pointer p) { super(p); }
+    private native void allocate();
+    private native void allocateArray(int size);
+    @Override public ConstantFoldingOptions position(int position) {
+        return (ConstantFoldingOptions)super.position(position);
+    }
+
+  // If "consider" is not a nullptr, then only constant fold a node "n" if
+  // consider(n) returns true.
+}
+
+// Construct a graph *g out of a GraphDef gdef. Returns non-OK on
+// error, in which case *g is left in an incomplete state.
+@Namespace("tensorflow") @NoOffset public static class GraphConstructorOptions extends Pointer {
+    static { Loader.load(); }
+    /** Pointer cast constructor. Invokes {@link Pointer#Pointer(Pointer)}. */
+    public GraphConstructorOptions(Pointer p) { super(p); }
+    /** Native array allocator. Access with {@link Pointer#position(int)}. */
+    public GraphConstructorOptions(int size) { super((Pointer)null); allocateArray(size); }
+    private native void allocateArray(int size);
+    @Override public GraphConstructorOptions position(int position) {
+        return (GraphConstructorOptions)super.position(position);
+    }
+
+  public GraphConstructorOptions() { super((Pointer)null); allocate(); }
+  private native void allocate();
+  public GraphConstructorOptions(@Const @ByRef OptimizerOptions opts) { super((Pointer)null); allocate(opts); }
+  private native void allocate(@Const @ByRef OptimizerOptions opts);
+
+  // If true, allows internal ops in the GraphDef.
+  public native @Cast("bool") boolean allow_internal_ops(); public native GraphConstructorOptions allow_internal_ops(boolean allow_internal_ops);
+
+  // If true, the graph def is expected to have fully specified
+  // devices for all nodes. A node in the resulting graph "g" has the
+  // device name set accordingly.
+  //
+  // TODO(zhifengc): if possible, consider removing this option.
+  public native @Cast("bool") boolean expect_device_spec(); public native GraphConstructorOptions expect_device_spec(boolean expect_device_spec);
+
+  // If true, perform common subexpression elimination on the graph.
+  // TODO(jeff): Turn this default to true?
+  public native @Cast("bool") boolean optimizer_do_cse(); public native GraphConstructorOptions optimizer_do_cse(boolean optimizer_do_cse);
+
+  // If "optimizer_do_cse" is true and "cse_consider_function" is
+  // not nullptr, then only consider nodes for CSE for which
+  // "cse_consider_function(node)" returns true.
+
+  // If true, perform constant folding on the graph.
+  public native @Cast("bool") boolean optimizer_do_constant_folding(); public native GraphConstructorOptions optimizer_do_constant_folding(boolean optimizer_do_constant_folding);
+
+  public native @ByRef ConstantFoldingOptions constant_folding_opts(); public native GraphConstructorOptions constant_folding_opts(ConstantFoldingOptions constant_folding_opts);
+}
+@Namespace("tensorflow") public static native @ByVal Status ConvertGraphDefToGraph(@Const @ByRef GraphConstructorOptions opts,
+                                     @Const @ByRef GraphDef gdef, Graph g);
+
+// Make a copy of "src" into "*dest".
+//
+// REQUIRES: "*dest" is a freshly allocated graph without any nodes or edges
+// other than the implicit Source/Sink nodes.
+@Namespace("tensorflow") public static native void CopyGraph(@Const @ByRef Graph src, Graph dest);
+
+  // namespace tensorflow
+
+// #endif  // TENSORFLOW_GRAPH_GRAPH_CONSTRUCTOR_H_
 
 
 // Parsed from tensorflow/cc/ops/standard_ops.h
@@ -8485,7 +8598,7 @@ limitations under the License.
 //
 // Arguments:
 // * concat_dim: The dimension along which to concatenate.
-// * shape: The `N` int32 vetors representing shape of tensors being concatenated.
+// * shape: The `N` int32 vectors representing shape of tensors being concatenated.
 // * opts:
 //   .WithName(StringPiece): Set the Node's name
 //   .WithDevice(StringPiece): Set the Node's requested device
@@ -9564,7 +9677,7 @@ limitations under the License.
 //
 // ```prettyprint
 // # tensor 'x' is [1, 1, 2, 4, 4, 4, 7, 8, 8]
-// y, idx, count = unique(x)
+// y, idx, count = unique_with_counts(x)
 // y ==> [1, 2, 4, 7, 8]
 // idx ==> [0, 0, 1, 2, 2, 2, 3, 4, 4]
 // count ==> [2, 1, 3, 1, 2]
@@ -10561,6 +10674,36 @@ limitations under the License.
 @Namespace("tensorflow::ops") public static native Node DecodePng(@ByVal NodeBuilder.NodeOut contents, @Const @ByRef GraphDefBuilder.Options opts);
 @Namespace("tensorflow::ops") public static native Node DecodePng(Node contents, @Const @ByRef GraphDefBuilder.Options opts);
 
+// Draw bounding boxes on a batch of images.
+//
+// Outputs a copy of `images` but draws on top of the pixels zero or more bounding
+// boxes specified by the locations in `boxes`. The coordinates of the each
+// bounding box in `boxes are encoded as `[y_min, x_min, y_max, x_max]`. The
+// bounding box coordinates are floats in `[0.0, 1.0]` relative to the width and
+// height of the underlying image.
+//
+// For example, if an image is 100 x 200 pixels and the bounding box is
+// `[0.1, 0.5, 0.2, 0.9]`, the bottom-left and upper-right coordinates of the
+// bounding box will be `(10, 40)` to `(50, 180)`.
+//
+// Parts of the bounding box may fall outside the image.
+//
+// Arguments:
+// * images: 4-D with shape `[batch, height, width, depth]`. A batch of images.
+// * boxes: 3-D with shape `[batch, num_bounding_boxes, 4]` containing bounding
+// boxes.
+// * opts:
+//   .WithName(StringPiece): Set the Node's name
+//   .WithDevice(StringPiece): Set the Node's requested device
+//   .WithControlInput(Node*) / .WithControlInputs({Node*, ...}):
+//     Add control dependencies on the specified Node(s).
+//
+// Returns a pointer to the created Node, with output:
+// 4-D with the same shape as `images`. The batch of input images with
+// bounding boxes drawn on the images.
+@Namespace("tensorflow::ops") public static native Node DrawBoundingBoxes(@ByVal NodeBuilder.NodeOut images, @ByVal NodeBuilder.NodeOut boxes, @Const @ByRef GraphDefBuilder.Options opts);
+@Namespace("tensorflow::ops") public static native Node DrawBoundingBoxes(Node images, Node boxes, @Const @ByRef GraphDefBuilder.Options opts);
+
 // JPEG-encode an image.
 //
 // `image` is a 3-D uint8 Tensor of shape `[height, width, channels]`.
@@ -10851,6 +10994,90 @@ limitations under the License.
 // with respect to the input image.
 @Namespace("tensorflow::ops") public static native Node ResizeNearestNeighborGrad(@ByVal NodeBuilder.NodeOut grads, @ByVal NodeBuilder.NodeOut size, @Const @ByRef GraphDefBuilder.Options opts);
 @Namespace("tensorflow::ops") public static native Node ResizeNearestNeighborGrad(Node grads, Node size, @Const @ByRef GraphDefBuilder.Options opts);
+
+// Generate a single randomly distorted bounding box for an image.
+//
+// Bounding box annotations are often supplied in addition to ground-truth labels
+// in image recognition or object localization tasks. A common technique for
+// training such a system is to randomly distort an image while preserving
+// its content, i.e. *data augmentation*. This Op outputs a randomly distorted
+// localization of an object, i.e. bounding box, given an `image_size`,
+// `bounding_boxes` and a series of constraints.
+//
+// The output of this Op is a single bounding box that may be used to crop the
+// original image. The output is returned as 3 tensors: `begin`, `size` and
+// `bboxes`. The first 2 tensors can be fed directly into `tf.slice` to crop the
+// image. The latter may be supplied to `tf.image.draw_bounding_box` to visualize
+// what the bounding box looks like.
+//
+// Bounding boxes are supplied and returned as `[y_min, x_min, y_max, x_max]`. The
+// bounding box coordinates are floats in `[0.0, 1.0]` relative to the width and
+// height of the underlying image.
+//
+// For example,
+//
+//     # Generate a single distorted bounding box.
+//     begin, size, bbox_for_draw = tf.image.sample_distorted_bounding_box(
+//         tf.shape(image),
+//         bounding_boxes=bounding_boxes)
+//
+//     # Draw the bounding box in an image summary.
+//     image_with_box = tf.image.draw_bounding_boxes(tf.expand_dims(image, 0),
+//                                                   bbox_for_draw)
+//     tf.image_summary('images_with_box', image_with_box)
+//
+//     # Employ the bounding box to distort the image.
+//     distorted_image = tf.slice(image, begin, size)
+//
+// Note that if no bounding box information is available, setting
+// `use_image_if_no_bounding_boxes = true` will assume there is a single implicit
+// bounding box covering the whole image. If `use_image_if_no_bounding_boxes` is
+// false and no bounding boxes are supplied, an error is raised.
+//
+// Arguments:
+// * image_size: 1-D, containing `[height, width, channels]`.
+// * bounding_boxes: 3-D with shape `[batch, N, 4]` describing the N bounding boxes
+// associated with the image.
+// * opts:
+//   .WithAttr("seed", int64): Defaults to 0.
+//     If either `seed` or `seed2` are set to non-zero, the random number
+// generator is seeded by the given `seed`.  Otherwise, it is seeded by a random
+// seed.
+//   .WithAttr("seed2", int64): Defaults to 0.
+//     A second seed to avoid seed collision.
+//   .WithAttr("min_object_covered", float): Defaults to 0.1.
+//     The cropped area of the image must contain at least this
+// fraction of any bounding box supplied.
+//   .WithAttr("aspect_ratio_range", gtl::ArraySlice<float>): Defaults to [0.75, 1.33].
+//     The cropped area of the image must have an aspect ratio =
+// width / height within this range.
+//   .WithAttr("area_range", gtl::ArraySlice<float>): Defaults to [0.05, 1].
+//     The cropped area of the image must contain a fraction of the
+// supplied image within in this range.
+//   .WithAttr("max_attempts", int64): Defaults to 100.
+//     Number of attempts at generating a cropped region of the image
+// of the specified constraints. After `max_attempts` failures, return the entire
+// image.
+//   .WithAttr("use_image_if_no_bounding_boxes", bool): Defaults to false.
+//     Controls behavior if no bounding boxes supplied.
+// If true, assume an implicit bounding box covering the whole input. If false,
+// raise an error.
+//   .WithName(StringPiece): Set the Node's name
+//   .WithDevice(StringPiece): Set the Node's requested device
+//   .WithControlInput(Node*) / .WithControlInputs({Node*, ...}):
+//     Add control dependencies on the specified Node(s).
+//
+// Returns a pointer to the created Node, with outputs:
+// * begin: 1-D, containing `[offset_height, offset_width, 0]`. Provide as input to
+// `tf.slice`.
+// * size: 1-D, containing `[target_height, target_width, -1]`. Provide as input to
+// `tf.slice`.
+// * bboxes: 3-D with shape `[1, 1, 4]` containing the distorted bounding box.
+// Provide as input to `tf.image.draw_bounding_boxes`.
+@Namespace("tensorflow::ops") public static native Node SampleDistortedBoundingBox(@ByVal NodeBuilder.NodeOut image_size, @ByVal NodeBuilder.NodeOut bounding_boxes,
+                                 @Const @ByRef GraphDefBuilder.Options opts);
+@Namespace("tensorflow::ops") public static native Node SampleDistortedBoundingBox(Node image_size, Node bounding_boxes,
+                                 @Const @ByRef GraphDefBuilder.Options opts);
 
   // namespace ops
   // namespace tensorflow
@@ -12045,6 +12272,26 @@ limitations under the License.
 // Returns a pointer to the created Node.
 @Namespace("tensorflow::ops") public static native Node Cos(@ByVal NodeBuilder.NodeOut x, @Const @ByRef GraphDefBuilder.Options opts);
 @Namespace("tensorflow::ops") public static native Node Cos(Node x, @Const @ByRef GraphDefBuilder.Options opts);
+
+// Compute the pairwise cross product.
+//
+// `a` and `b` must be the same shape; they can either be simple 3-element vectors,
+// or any shape where the innermost dimension is 3. In the latter case, each pair
+// of corresponding 3-element vectors is cross-multiplied independently.
+//
+// Arguments:
+// * a: A tensor containing 3-element vectors.
+// * b: Another tensor, of same type and shape as `a`.
+// * opts:
+//   .WithName(StringPiece): Set the Node's name
+//   .WithDevice(StringPiece): Set the Node's requested device
+//   .WithControlInput(Node*) / .WithControlInputs({Node*, ...}):
+//     Add control dependencies on the specified Node(s).
+//
+// Returns a pointer to the created Node, with output:
+// Pairwise cross product of the vectors in `a` and `b`.
+@Namespace("tensorflow::ops") public static native Node Cross(@ByVal NodeBuilder.NodeOut a, @ByVal NodeBuilder.NodeOut b, @Const @ByRef GraphDefBuilder.Options opts);
+@Namespace("tensorflow::ops") public static native Node Cross(Node a, Node b, @Const @ByRef GraphDefBuilder.Options opts);
 
 // Returns x / y element-wise.
 //
@@ -14974,8 +15221,9 @@ limitations under the License.
 // This operation outputs `ref` after the update is done.
 // This makes it easier to chain operations that need to use the reset value.
 //
-// If `indices` contains duplicate entries, lexicographically later entries
-// override earlier entries.
+// If values in `ref` is to be updated more than once, because there are
+// duplicate entires in `indices`, the order at which the updates happen
+// for each value is undefined.
 //
 // Requires `updates.shape = indices.shape + ref.shape[1:]`.
 //
