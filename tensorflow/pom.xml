@@ -16,7 +16,7 @@
   <name>JavaCPP Presets for TensorFlow</name>
 
   <properties>
-    <tensorflow.version>master</tensorflow.version>
+    <tensorflow.version>0.7.1</tensorflow.version>
   </properties>
 
   <dependencies>

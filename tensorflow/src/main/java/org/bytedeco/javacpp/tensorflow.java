@@ -9,6 +9,20 @@ import org.bytedeco.javacpp.annotation.*;
 public class tensorflow extends org.bytedeco.javacpp.helper.tensorflow {
     static { Loader.load(); }
 
+@Name("tensorflow::gtl::InlinedVector<long long,4>") public static class LongVector extends Pointer {
+    static { Loader.load(); }
+    /** Pointer cast constructor. Invokes {@link Pointer#Pointer(Pointer)}. */
+    public LongVector(Pointer p) { super(p); }
+    public LongVector()       { allocate();  }
+    private native void allocate();
+    public native @Name("operator=") @ByRef LongVector put(@ByRef LongVector x);
+
+    public native long size();
+
+    @Index public native @Cast("long long") long get(@Cast("size_t") long i);
+    public native LongVector put(@Cast("size_t") long i, long value);
+}
+
 @Name("tensorflow::gtl::InlinedVector<tensorflow::DataType,4>") public static class DataTypeVector extends Pointer {
     static { Loader.load(); }
     /** Pointer cast constructor. Invokes {@link Pointer#Pointer(Pointer)}. */
@@ -21,6 +35,32 @@ public class tensorflow extends org.bytedeco.javacpp.helper.tensorflow {
 
     @Index public native @Cast("tensorflow::DataType") int get(@Cast("size_t") long i);
     public native DataTypeVector put(@Cast("size_t") long i, int value);
+}
+
+@Name("google::protobuf::Map<std::string,tensorflow::AttrValue>") public static class StringAttrValueMap extends Pointer {
+    static { Loader.load(); }
+    /** Pointer cast constructor. Invokes {@link Pointer#Pointer(Pointer)}. */
+    public StringAttrValueMap(Pointer p) { super(p); }
+    public StringAttrValueMap()       { allocate();  }
+    private native void allocate();
+    public native @Name("operator=") @ByRef StringAttrValueMap put(@ByRef StringAttrValueMap x);
+
+    public native long size();
+
+    @Index public native @ByRef AttrValue get(@StdString BytePointer i);
+    public native StringAttrValueMap put(@StdString BytePointer i, AttrValue value);
+
+    public native @ByVal Iterator begin();
+    public native @ByVal Iterator end();
+    @NoOffset @Name("iterator") public static class Iterator extends Pointer {
+        public Iterator(Pointer p) { super(p); }
+        public Iterator() { }
+
+        public native @Name("operator++") @ByRef Iterator increment();
+        public native @Name("operator==") boolean equals(@ByRef Iterator it);
+        public native @Name("operator*().first") @MemberGetter @StdString BytePointer first();
+        public native @Name("operator*().second") @MemberGetter @ByRef AttrValue second();
+    }
 }
 
 @Name("std::vector<std::string>") public static class StringVector extends Pointer {
@@ -77,6 +117,32 @@ public class tensorflow extends org.bytedeco.javacpp.helper.tensorflow {
     public native TensorVector put(@Cast("size_t") long i, Tensor value);
 
     public TensorVector put(Tensor ... array) {
+        if (size() != array.length) { resize(array.length); }
+        for (int i = 0; i < array.length; i++) {
+            put(i, array[i]);
+        }
+        return this;
+    }
+}
+
+@Name("std::vector<tensorflow::TensorProto>") public static class TensorProtoVector extends Pointer {
+    static { Loader.load(); }
+    /** Pointer cast constructor. Invokes {@link Pointer#Pointer(Pointer)}. */
+    public TensorProtoVector(Pointer p) { super(p); }
+    public TensorProtoVector(TensorProto ... array) { this(array.length); put(array); }
+    public TensorProtoVector()       { allocate();  }
+    public TensorProtoVector(long n) { allocate(n); }
+    private native void allocate();
+    private native void allocate(@Cast("size_t") long n);
+    public native @Name("operator=") @ByRef TensorProtoVector put(@ByRef TensorProtoVector x);
+
+    public native long size();
+    public native void resize(@Cast("size_t") long n);
+
+    @Index public native @ByRef TensorProto get(@Cast("size_t") long i);
+    public native TensorProtoVector put(@Cast("size_t") long i, TensorProto value);
+
+    public TensorProtoVector put(TensorProto ... array) {
         if (size() != array.length) { resize(array.length); }
         for (int i = 0; i < array.length; i++) {
             put(i, array[i]);
@@ -2515,11 +2581,6 @@ limitations under the License.
 // specification of the desired memory attributes in order to select
 // an Allocator.
 //
-// NOTE: The upper 8 bits of the value are reserved for
-// device-specific uses.  Implementors of a device can interpret these
-// upper 8 bits in device-specific ways, and ops implemented for those
-// devices are responsible for setting those 8 bits appropriately.
-//
 // Example use:
 //  // Allocator for ordinary device memory:
 //  Allocator* a = allocator(AllocatorAttributes());
@@ -2551,7 +2612,15 @@ limitations under the License.
 
   public native void Merge(@ByVal AllocatorAttributes other);
 
+<<<<<<< HEAD
   public native @Cast("tensorflow::uint8") byte value(); public native AllocatorAttributes value(byte value);
+=======
+  // NOTE: The upper 8 bits of the value are reserved for
+  // device-specific uses.  Implementors of a device can interpret these
+  // upper 8 bits in device-specific ways, and ops implemented for those
+  // devices are responsible for setting those 8 bits appropriately.
+  public native @Cast("tensorflow::uint32") int value(); public native AllocatorAttributes value(int value);
+>>>>>>> upstream/master
 }
 
 // Returns a trivial implementation of Allocator which uses the system
@@ -3523,6 +3592,12 @@ limitations under the License.
   public native @Cast("tensorflow::int64") long dim_size(int d);
 
   /** Returns sizes of all dimensions. */
+<<<<<<< HEAD
+=======
+  
+  ///
+  public native @ByVal LongVector dim_sizes();
+>>>>>>> upstream/master
 
   /** \brief Returns the number of elements in the tensor.
    * 
@@ -3906,7 +3981,15 @@ limitations under the License.
    *  not get destroyed while the {@code StringPiece} is still used.
    * 
    *  REQUIRES: {@code DataTypeCanUseMemcpy(dtype())}. */
+  
+  ///
   public native @StringPiece BytePointer tensor_data();
+
+  /** Copy the other tensor into this tensor and reshape it and reinterpret the
+   *  buffer's datatype.
+   * 
+   *  This tensor shares other's underlying storage. */
+  public native void UnsafeCopyFromInternal(@Const @ByRef Tensor arg0, @Const @ByRef TensorShape arg1);
 }
 
 // Implementation details
@@ -4344,6 +4427,8 @@ limitations under the License.
   public native void clear_attr();
   @MemberGetter public static native int kAttrFieldNumber();
   public static final int kAttrFieldNumber = kAttrFieldNumber();
+  public native @Const @ByRef StringAttrValueMap attr();
+  public native StringAttrValueMap mutable_attr();
 }
 // ===================================================================
 
@@ -5531,6 +5616,8 @@ limitations under the License.
   public native void clear_attr();
   @MemberGetter public static native int kAttrFieldNumber();
   public static final int kAttrFieldNumber = kAttrFieldNumber();
+  public native @Const @ByRef StringAttrValueMap attr();
+  public native StringAttrValueMap mutable_attr();
 }
 // -------------------------------------------------------------------
 
@@ -5972,6 +6059,8 @@ limitations under the License.
   public native void clear_attr();
   @MemberGetter public static native int kAttrFieldNumber();
   public static final int kAttrFieldNumber = kAttrFieldNumber();
+  public native @Const @ByRef StringAttrValueMap attr();
+  public native StringAttrValueMap mutable_attr();
 }
 // ===================================================================
 
@@ -7275,6 +7364,9 @@ public static final int kDataTypeRefOffset = 100;
 
 @Namespace("tensorflow") public static native @Cast("bool") boolean DataTypeIsQuantized(@Cast("tensorflow::DataType") int dt);
 
+// Returns a 0 on failure
+@Namespace("tensorflow") public static native int DataTypeSize(@Cast("tensorflow::DataType") int dt);
+
   // namespace tensorflow
 
 // #endif  // TENSORFLOW_FRAMEWORK_TYPES_H_
@@ -8059,6 +8151,60 @@ limitations under the License.
     public native @ByVal Options WithControlInputs(@ByVal NodeVector control_inputs);
 
     // Override the default value for an optional attr.
+    public native @ByVal Options WithAttr(@StringPiece BytePointer attr_name, int value);
+    public native @ByVal Options WithAttr(@StringPiece String attr_name, int value);
+    public native @ByVal Options WithAttr(@StringPiece BytePointer attr_name, @ArraySlice IntPointer value);
+    public native @ByVal Options WithAttr(@StringPiece String attr_name, @ArraySlice IntBuffer value);
+    public native @ByVal Options WithAttr(@StringPiece BytePointer attr_name, @ArraySlice int... value);
+    public native @ByVal Options WithAttr(@StringPiece String attr_name, @ArraySlice IntPointer value);
+    public native @ByVal Options WithAttr(@StringPiece BytePointer attr_name, @ArraySlice IntBuffer value);
+    public native @ByVal Options WithAttr(@StringPiece String attr_name, @ArraySlice int... value);
+    public native @ByVal Options WithAttr(@StringPiece BytePointer attr_name, @Cast("long long") long value);
+    public native @ByVal Options WithAttr(@StringPiece String attr_name, @Cast("long long") long value);
+    public native @ByVal Options WithAttr(@StringPiece BytePointer attr_name, @Cast("long long*") @ArraySlice LongPointer value);
+    public native @ByVal Options WithAttr(@StringPiece String attr_name, @Cast("long long*") @ArraySlice LongBuffer value);
+    public native @ByVal Options WithAttr(@StringPiece BytePointer attr_name, @Cast("long long*") @ArraySlice long... value);
+    public native @ByVal Options WithAttr(@StringPiece String attr_name, @Cast("long long*") @ArraySlice LongPointer value);
+    public native @ByVal Options WithAttr(@StringPiece BytePointer attr_name, @Cast("long long*") @ArraySlice LongBuffer value);
+    public native @ByVal Options WithAttr(@StringPiece String attr_name, @Cast("long long*") @ArraySlice long... value);
+    public native @ByVal Options WithAttr(@StringPiece BytePointer attr_name, float value);
+    public native @ByVal Options WithAttr(@StringPiece String attr_name, float value);
+    public native @ByVal Options WithAttr(@StringPiece BytePointer attr_name, @ArraySlice FloatPointer value);
+    public native @ByVal Options WithAttr(@StringPiece String attr_name, @ArraySlice FloatBuffer value);
+    public native @ByVal Options WithAttr(@StringPiece BytePointer attr_name, @ArraySlice float... value);
+    public native @ByVal Options WithAttr(@StringPiece String attr_name, @ArraySlice FloatPointer value);
+    public native @ByVal Options WithAttr(@StringPiece BytePointer attr_name, @ArraySlice FloatBuffer value);
+    public native @ByVal Options WithAttr(@StringPiece String attr_name, @ArraySlice float... value);
+    public native @ByVal Options WithAttr(@StringPiece BytePointer attr_name, double value);
+    public native @ByVal Options WithAttr(@StringPiece String attr_name, double value);
+    public native @ByVal Options WithAttr(@StringPiece BytePointer attr_name, @ArraySlice DoublePointer value);
+    public native @ByVal Options WithAttr(@StringPiece String attr_name, @ArraySlice DoubleBuffer value);
+    public native @ByVal Options WithAttr(@StringPiece BytePointer attr_name, @ArraySlice double... value);
+    public native @ByVal Options WithAttr(@StringPiece String attr_name, @ArraySlice DoublePointer value);
+    public native @ByVal Options WithAttr(@StringPiece BytePointer attr_name, @ArraySlice DoubleBuffer value);
+    public native @ByVal Options WithAttr(@StringPiece String attr_name, @ArraySlice double... value);
+    public native @ByVal Options WithAttr(@StringPiece BytePointer attr_name, @Cast("bool") boolean value);
+    public native @ByVal Options WithAttr(@StringPiece String attr_name, @Cast("bool") boolean value);
+    public native @ByVal Options WithAttr(@StringPiece BytePointer attr_name, @Cast("bool*") @ArraySlice BoolPointer value);
+    public native @ByVal Options WithAttr(@StringPiece String attr_name, @Cast("bool*") @ArraySlice boolean... value);
+    public native @ByVal Options WithAttr(@StringPiece BytePointer attr_name, @StdString BytePointer value);
+    public native @ByVal Options WithAttr(@StringPiece String attr_name, @StdString String value);
+    public native @ByVal Options WithAttr(@StringPiece BytePointer attr_name, @ByVal StringVector value);
+    public native @ByVal Options WithAttr(@StringPiece String attr_name, @ByVal StringVector value);
+    public native @ByVal Options WithAttr(@StringPiece BytePointer attr_name, @ByVal Tensor value);
+    public native @ByVal Options WithAttr(@StringPiece String attr_name, @ByVal Tensor value);
+    public native @ByVal Options WithAttr(@StringPiece BytePointer attr_name, @ByVal TensorVector value);
+    public native @ByVal Options WithAttr(@StringPiece String attr_name, @ByVal TensorVector value);
+    public native @ByVal Options WithAttr(@StringPiece BytePointer attr_name, @ByVal TensorProto value);
+    public native @ByVal Options WithAttr(@StringPiece String attr_name, @ByVal TensorProto value);
+    public native @ByVal Options WithAttr(@StringPiece BytePointer attr_name, @ByVal TensorProtoVector value);
+    public native @ByVal Options WithAttr(@StringPiece String attr_name, @ByVal TensorProtoVector value);
+    public native @ByVal Options WithAttr(@StringPiece BytePointer attr_name, @ByVal TensorShape value);
+    public native @ByVal Options WithAttr(@StringPiece String attr_name, @ByVal TensorShape value);
+    public native @ByVal Options WithAttr(@StringPiece BytePointer attr_name, @ByVal TensorShapeVector value);
+    public native @ByVal Options WithAttr(@StringPiece String attr_name, @ByVal TensorShapeVector value);
+    public native @ByVal Options WithAttr(@StringPiece BytePointer attr_name, @ByVal NameAttrList value);
+    public native @ByVal Options WithAttr(@StringPiece String attr_name, @ByVal NameAttrList value);
     // Note: overload needed to allow {...} expressions for value.
 
     // Methods for using options from a function that creates a Node.
@@ -8228,6 +8374,10 @@ limitations under the License.
 
   // If "consider" is not a nullptr, then only constant fold a node "n" if
   // consider(n) returns true.
+<<<<<<< HEAD
+=======
+  @MemberSetter public native ConstantFoldingOptions consider(@ByVal ConsiderFunction consider);
+>>>>>>> upstream/master
 }
 
 // Construct a graph *g out of a GraphDef gdef. Returns non-OK on
@@ -8265,6 +8415,10 @@ limitations under the License.
   // If "optimizer_do_cse" is true and "cse_consider_function" is
   // not nullptr, then only consider nodes for CSE for which
   // "cse_consider_function(node)" returns true.
+<<<<<<< HEAD
+=======
+  @MemberSetter public native GraphConstructorOptions cse_consider_function(@ByVal ConsiderFunction cse_consider_function);
+>>>>>>> upstream/master
 
   // If true, perform constant folding on the graph.
   public native @Cast("bool") boolean optimizer_do_constant_folding(); public native GraphConstructorOptions optimizer_do_constant_folding(boolean optimizer_do_constant_folding);
@@ -8465,6 +8619,9 @@ limitations under the License.
 
 // String
 @Namespace("tensorflow::ops") public static native Node Const(@Cast({"", "tensorflow::StringPiece&"}) @StringPiece String s, @Const @ByRef GraphDefBuilder.Options options);
+@Namespace("tensorflow::ops") public static native Node Const(@ByVal StringVector v, @Const @ByRef GraphDefBuilder.Options options);
+@Namespace("tensorflow::ops") public static native Node Const(@ByVal StringVector t, @Const @ByRef TensorShape shape,
+            @Const @ByRef GraphDefBuilder.Options options);
 
 // A Tensor of any type.
 @Namespace("tensorflow::ops") public static native Node Const(@Const @ByRef Tensor t, @Const @ByRef GraphDefBuilder.Options options);
@@ -8530,6 +8687,29 @@ limitations under the License.
 // * a {Node*, int index} (to pass the index-th output of that node), or
 // * a Node* (to pass the first output of that node).
 
+
+// Bitcasts a tensor from one type to another without copying data.
+//
+// Given a tensor `input`, this operation returns a tensor that has the same buffer
+// data as `input` with datatype `type`.
+//
+// If the input datatype `T` is larger than the output datatype `type` then the
+// shape changes from [...] to [..., sizeof(`T`)/sizeof(`type`)].
+//
+// If `T` is smaller than `type`, the operator requires that the rightmost
+// dimension be equal to sizeof(`type`)/sizeof(`T`). The shape then goes from
+// [..., sizeof(`type`)/sizeof(`T`)] to [...].
+//
+// Arguments:
+// * opts:
+//   .WithName(StringPiece): Set the Node's name
+//   .WithDevice(StringPiece): Set the Node's requested device
+//   .WithControlInput(Node*) / .WithControlInputs({Node*, ...}):
+//     Add control dependencies on the specified Node(s).
+//
+// Returns a pointer to the created Node.
+@Namespace("tensorflow::ops") public static native Node Bitcast(@ByVal NodeBuilder.NodeOut input, @Cast("tensorflow::DataType") int type, @Const @ByRef GraphDefBuilder.Options opts);
+@Namespace("tensorflow::ops") public static native Node Bitcast(Node input, @Cast("tensorflow::DataType") int type, @Const @ByRef GraphDefBuilder.Options opts);
 
 // Return the reduction indices for computing gradients of s0 op s1 with broadcast.
 //
@@ -10415,6 +10595,34 @@ limitations under the License.
 @Namespace("tensorflow::ops") public static native Node TensorArrayClose(@ByVal NodeBuilder.NodeOut handle, @Const @ByRef GraphDefBuilder.Options opts);
 @Namespace("tensorflow::ops") public static native Node TensorArrayClose(Node handle, @Const @ByRef GraphDefBuilder.Options opts);
 
+// Concat the elements from the TensorArray.
+//
+// Takes T elements of shapes (n0 x d0 x d1 x ...), (n1 x d0 x d1 x ...),
+//   ..., (n(T-1) x d0 x d1 x ...)
+// and concatenates them into a Tensor of shape:
+//   (n0 + n1 + ... + n(T-1) x d0 x d1 x ...).
+//
+// All elements must have the same shape (excepting the first dimension).
+//
+// Arguments:
+// * handle: The handle to a TensorArray.
+// * flow_in: A float scalar that enforces proper chaining of operations.
+// * dtype: The type of the elem that is returned.
+// * opts:
+//   .WithName(StringPiece): Set the Node's name
+//   .WithDevice(StringPiece): Set the Node's requested device
+//   .WithControlInput(Node*) / .WithControlInputs({Node*, ...}):
+//     Add control dependencies on the specified Node(s).
+//
+// Returns a pointer to the created Node, with outputs:
+// * value: All of the elements in the TensorArray, concatenated along the first
+// axis.
+// * lengths: A vector of the row sizes of the original T elements in the
+// value output.  In the example above, this would be the values:
+// (n1, n2, ..., n(T-1))
+@Namespace("tensorflow::ops") public static native Node TensorArrayConcat(@ByVal NodeBuilder.NodeOut handle, @ByVal NodeBuilder.NodeOut flow_in, @Cast("tensorflow::DataType") int dtype, @Const @ByRef GraphDefBuilder.Options opts);
+@Namespace("tensorflow::ops") public static native Node TensorArrayConcat(Node handle, Node flow_in, @Cast("tensorflow::DataType") int dtype, @Const @ByRef GraphDefBuilder.Options opts);
+
 // Creates a TensorArray for storing the gradients of values in the given handle.
 //
 // If the given TensorArray gradient already exists, returns a reference to it.
@@ -10499,6 +10707,36 @@ limitations under the License.
 // The current size of the TensorArray.
 @Namespace("tensorflow::ops") public static native Node TensorArraySize(@ByVal NodeBuilder.NodeOut handle, @ByVal NodeBuilder.NodeOut flow_in, @Const @ByRef GraphDefBuilder.Options opts);
 @Namespace("tensorflow::ops") public static native Node TensorArraySize(Node handle, Node flow_in, @Const @ByRef GraphDefBuilder.Options opts);
+
+// Split the data from the input value into TensorArray elements.
+//
+// Assuming that `lengths` takes on values
+//   (n0, n1, ..., n(T-1))
+// and that `value` has shape
+//   (n0 + n1 + ... + n(T-1) x d0 x d1 x ...),
+// this splits values into a TensorArray with T tensors.
+//
+// TensorArray index t will be the subtensor of values with starting position
+//   (n0 + n1 + ... + n(t-1), 0, 0, ...)
+// and having size
+//   nt x d0 x d1 x ...
+//
+// Arguments:
+// * handle: The handle to a TensorArray.
+// * value: The concatenated tensor to write to the TensorArray.
+// * lengths: The vector of lengths, how to split the rows of value into the
+// TensorArray.
+// * flow_in: A float scalar that enforces proper chaining of operations.
+// * opts:
+//   .WithName(StringPiece): Set the Node's name
+//   .WithDevice(StringPiece): Set the Node's requested device
+//   .WithControlInput(Node*) / .WithControlInputs({Node*, ...}):
+//     Add control dependencies on the specified Node(s).
+//
+// Returns a pointer to the created Node, with output:
+// A float scalar that enforces proper chaining of operations.
+@Namespace("tensorflow::ops") public static native Node TensorArraySplit(@ByVal NodeBuilder.NodeOut handle, @ByVal NodeBuilder.NodeOut value, @ByVal NodeBuilder.NodeOut lengths, @ByVal NodeBuilder.NodeOut flow_in, @Const @ByRef GraphDefBuilder.Options opts);
+@Namespace("tensorflow::ops") public static native Node TensorArraySplit(Node handle, Node value, Node lengths, Node flow_in, @Const @ByRef GraphDefBuilder.Options opts);
 
 // Unpack the data from the input value into TensorArray elements.
 //
@@ -10761,6 +10999,7 @@ limitations under the License.
 // where `channels` is:
 //
 // *   1: for grayscale.
+// *   2: for grayscale + alpha.
 // *   3: for RGB.
 // *   4: for RGBA.
 //
@@ -11647,12 +11886,11 @@ limitations under the License.
 // \\(\mathrm{cond}(A) \lt \frac{1}{\sqrt{\epsilon_{mach}}}\\) or\\(\lambda\\) is
 // sufficiently large.
 //
-// If `fast` is `False` then the solution is computed using the rank revealing QR
-// decomposition with column pivoting. This will always compute a least-squares
-// solution that minimizes the residual norm \\(||A X - B||_F^2\\), even when
-// \\(A\\) is rank deficient or ill-conditioned. Notice: The current version does
-// not compute a minimum norm solution. If `fast` is `False` then `l2_regularizer`
-// is ignored.
+// If `fast` is `False` an algorithm based on the numerically robust complete
+// orthogonal decomposition is used. This computes the minimum-norm
+// least-squares solution, even when \\(A\\) is rank deficient. This path is
+// typically 6-7 times slower than the fast path. If `fast` is `False` then
+// `l2_regularizer` is ignored.
 //
 // Arguments:
 // * matrix: Shape is `[..., M, N]`.
@@ -11824,11 +12062,10 @@ limitations under the License.
 // \\(\mathrm{cond}(A) \lt \frac{1}{\sqrt{\epsilon_{mach}}}\\)
 // or \\(\lambda\\) is sufficiently large.
 //
-// If `fast` is `False` then the solution is computed using the rank revealing QR
-// decomposition with column pivoting. This will always compute a least-squares
-// solution that minimizes the residual norm \\(||A X - B||_F^2 \\), even when
-// \\( A \\) is rank deficient or ill-conditioned. Notice: The current version
-// does not compute a minimum norm solution. If `fast` is `False` then
+// If `fast` is `False` an algorithm based on the numerically robust complete
+// orthogonal decomposition is used. This computes the minimum-norm
+// least-squares solution, even when \\(A\\) is rank deficient. This path is
+// typically 6-7 times slower than the fast path. If `fast` is `False` then
 // `l2_regularizer` is ignored.
 //
 // Arguments:
@@ -14930,6 +15167,39 @@ limitations under the License.
 // tensors.
 @Namespace("tensorflow::ops") public static native Node SparseSplit(@ByVal NodeBuilder.NodeOut split_dim, @ByVal NodeBuilder.NodeOut indices, @ByVal NodeBuilder.NodeOut values, @ByVal NodeBuilder.NodeOut shape, @Cast("tensorflow::int64") long num_split, @Const @ByRef GraphDefBuilder.Options opts);
 @Namespace("tensorflow::ops") public static native Node SparseSplit(Node split_dim, Node indices, Node values, Node shape, @Cast("tensorflow::int64") long num_split, @Const @ByRef GraphDefBuilder.Options opts);
+
+// Multiply SparseTensor (of rank 2) "A" by dense matrix "B".
+//
+// No validity checking is performed on the indices of A.  However, the following
+// input format is recommended for optimal behavior:
+//
+// if adjoint_a == false:
+//   A should be sorted in lexicographically increasing order.  Use SparseReorder
+//   if you're not sure.
+// if adjoint_a == true:
+//   A should be sorted in order of increasing dimension 1 (i.e., "column major"
+//   order instead of "row major" order).
+//
+// Arguments:
+// * a_indices: 2-D.  The `indices` of the `SparseTensor`, size [nnz x 2] Matrix.
+// * a_values: 1-D.  The `values` of the `SparseTensor`, size [nnz] Vector.
+// * a_shape: 1-D.  The `shape` of the `SparseTensor`, size [2] Vector.
+// * b: 2-D.  A dense Matrix.
+// * opts:
+//   .WithAttr("adjoint_a", bool): Defaults to false.
+//     Use the adjoint of A in the matrix multiply.  If A is complex, this
+// is transpose(conj(A)).  Otherwise it's transpose(A).
+//   .WithAttr("adjoint_b", bool): Defaults to false.
+//     Use the adjoint of B in the matrix multiply.  If B is complex, this
+// is transpose(conj(B)).  Otherwise it's transpose(B).
+//   .WithName(StringPiece): Set the Node's name
+//   .WithDevice(StringPiece): Set the Node's requested device
+//   .WithControlInput(Node*) / .WithControlInputs({Node*, ...}):
+//     Add control dependencies on the specified Node(s).
+//
+// Returns a pointer to the created Node.
+@Namespace("tensorflow::ops") public static native Node SparseTensorDenseMatMul(@ByVal NodeBuilder.NodeOut a_indices, @ByVal NodeBuilder.NodeOut a_values, @ByVal NodeBuilder.NodeOut a_shape, @ByVal NodeBuilder.NodeOut b, @Const @ByRef GraphDefBuilder.Options opts);
+@Namespace("tensorflow::ops") public static native Node SparseTensorDenseMatMul(Node a_indices, Node a_values, Node a_shape, Node b, @Const @ByRef GraphDefBuilder.Options opts);
 
 // Converts a sparse representation into a dense tensor.
 //

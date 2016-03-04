@@ -23,14 +23,13 @@ case $PLATFORM in
         ;;
 esac
 
-PROTOBUF_VERSION=master
 # Hardcoding a release of TF, because the API changes a lot and the cpp header list if out of date.
 # Release 0.6.0 is incompatible with bazel >= 0.1.5, so using a pre-release of 0.7 instead.
-TENSORFLOW_VERSION=46b3d31c228c8e88a2f59a32ca3cd3ced4a09771
+TENSORFLOW_VERSION="v0.7.1"
 TENSORFLOW_PATCH_VERSION=0.7
 
-download https://github.com/google/protobuf/archive/$PROTOBUF_VERSION.tar.gz protobuf-$PROTOBUF_VERSION.tar.gz
-download https://github.com/tensorflow/tensorflow/archive/$TENSORFLOW_VERSION.tar.gz tensorflow-$TENSORFLOW_VERSION.tar.gz
+#download https://github.com/google/protobuf/archive/v$PROTOBUF_VERSION.tar.gz protobuf-$PROTOBUF_VERSION.tar.gz
+#download https://github.com/tensorflow/tensorflow/archive/v$TENSORFLOW_VERSION.tar.gz tensorflow-$TENSORFLOW_VERSION.tar.gz
 
 mkdir -p $PLATFORM
 cd $PLATFORM

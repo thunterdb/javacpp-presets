@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013-2015 Samuel Audet
+ * Copyright (C) 2016 Samuel Audet
  *
  * Licensed either under the Apache License, Version 2.0, or (at your option)
  * under the terms of the GNU General Public License as published by
@@ -32,14 +32,21 @@ import org.bytedeco.javacpp.tools.InfoMapper;
  *
  * @author Samuel Audet
  */
-@Properties(inherit=avcodec.class, target="org.bytedeco.javacpp.avformat", value={
-    @Platform(cinclude={"<libavformat/avio.h>", "<libavformat/avformat.h>"}, link="avformat@.57"),
-    @Platform(value="windows", preload="avformat-57") })
-public class avformat implements InfoMapper {
+@Properties(inherit = opencv_imgproc.class, value = {
+    @Platform(include = {"<opencv2/dnn.hpp>", "<opencv2/dnn/dict.hpp>","<opencv2/dnn/blob.hpp>",
+                         "<opencv2/dnn/layer.hpp>", "<opencv2/dnn/dnn.hpp>"}, link = "opencv_dnn@.3.1"),
+    @Platform(value = "windows", link = "opencv_dnn310")},
+        target = "org.bytedeco.javacpp.opencv_dnn")
+public class opencv_dnn implements InfoMapper {
     public void map(InfoMap infoMap) {
-        infoMap.put(new Info("URLContext", "FFFrac").cast().pointerTypes("Pointer"))
-               .put(new Info("AVPROBE_SCORE_RETRY", "AVPROBE_SCORE_STREAM_RETRY").translate(false))
-               .put(new Info("LIBAVFORMAT_VERSION_MAJOR <= 54", "FF_API_ALLOC_OUTPUT_CONTEXT", "FF_API_FORMAT_PARAMETERS",
-                             "FF_API_READ_PACKET", "FF_API_CLOSE_INPUT_FILE", "FF_API_NEW_STREAM", "FF_API_SET_PTS_INFO").define(false));
+        infoMap.put(new Info("std::vector<cv::dnn::Blob>").pointerTypes("BlobVector").define())
+               .put(new Info("std::vector<cv::dnn::Blob*>").pointerTypes("BlobPointerVector").define())
+               .put(new Info("cv::dnn::Net::forward(cv::dnn::Net::LayerId, cv::dnn::Net::LayerId)",
+                             "cv::dnn::Net::forward(cv::dnn::Net::LayerId*, cv::dnn::Net::LayerId*)",
+                             "cv::dnn::Net::forwardOpt(cv::dnn::Net::LayerId)",
+                             "cv::dnn::Net::forwardOpt(cv::dnn::Net::LayerId*)",
+                             "cv::dnn::Net::setParam(cv::dnn::Net::LayerId, int, cv::dnn::Blob&)",
+                             "cv::dnn::readTorchBlob(cv::String&, bool)",
+                             "cv::dnn::Blob::fill(cv::InputArray)").skip());
     }
 }

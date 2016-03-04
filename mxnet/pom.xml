@@ -10,10 +10,10 @@
   </parent>
 
   <groupId>org.bytedeco.javacpp-presets</groupId>
-  <artifactId>caffe</artifactId>
-  <version>rc3-${project.parent.version}</version>
+  <artifactId>mxnet</artifactId>
+  <version>master-${project.parent.version}</version>
   <packaging>jar</packaging>
-  <name>JavaCPP Presets for Caffe</name>
+  <name>JavaCPP Presets for MXNet</name>
 
   <properties>
     <javacpp.platform.oldcompiler>${javacpp.platform.compiler}</javacpp.platform.oldcompiler>
@@ -76,13 +76,13 @@
           <execution>
             <id>generate-sources</id>
             <configuration>
-              <classOrPackageName>org.bytedeco.javacpp.presets.caffe</classOrPackageName>
+              <classOrPackageName>org.bytedeco.javacpp.presets.mxnet</classOrPackageName>
             </configuration>
           </execution>
           <execution>
             <id>process-classes</id>
             <configuration>
-              <classOrPackageName>org.bytedeco.javacpp.caffe</classOrPackageName>
+              <classOrPackageName>org.bytedeco.javacpp.mxnet</classOrPackageName>
             </configuration>
           </execution>
         </executions>
