@@ -44,6 +44,9 @@ cd tensorflow
 git remote update
 git submodule update
 git checkout $TENSORFLOW_VERSION
+# This will only reset the potentially patched files, but it will not remove temporary files.
+# Bazel seems to be good enough to know what to recompile without having to do a full clean.
+git reset --hard
 
 
 #echo "Decompressing archives"
