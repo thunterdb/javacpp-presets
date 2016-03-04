@@ -42,7 +42,8 @@ rmdir protobuf || true
 ln -snf ../../protobuf-$PROTOBUF_VERSION protobuf
 cd ..
 patch -Np1 < ../../../tensorflow-$TENSORFLOW_VERSION.patch
-./configure
+# No CUDA support and default python
+TF_NEED_CUDA=0 PYTHON_BIN_PATH=$(which python) ./configure
 bazel build -c dbg //tensorflow/cc:libtensorflow.so $BUILDFLAGS
 
 cd ../..
