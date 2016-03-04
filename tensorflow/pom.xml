@@ -13,7 +13,6 @@
   <artifactId>tensorflow</artifactId>
   <version>${tensorflow.version}-${project.parent.version}</version>
   <packaging>jar</packaging>
-  <classifier>linux-x86_64</classifier>
   <name>JavaCPP Presets for TensorFlow</name>
 
   <properties>
